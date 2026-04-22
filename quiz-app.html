@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#6366f1">
+  <title>福沢諭吉クイズ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* ===== SCREEN BASE ===== */
+    .screen { display: none; animation: fadeIn 0.3s ease; }
+    .screen.active { display: flex; flex-direction: column; gap: 20px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      text-align: center;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* ===== CATEGORY GRID ===== */
+    .categories {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .category-btn {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .category-btn.selected {
+      border-color: var(--primary);
+      background: #eef2ff;
+    }
+    .category-btn:hover, .category-btn:active {
+      border-color: var(--primary);
+      background: #eef2ff;
+      transform: scale(0.97);
+    }
+    .category-btn .emoji { font-size: 32px; }
+
+    /* ===== DIFFICULTY ===== */
+    .difficulty-row {
+      display: flex;
+      gap: 8px;
+    }
+    .diff-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--muted);
+    }
+    .diff-btn.selected { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), #8b5cf6); color: white; }
+    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    .btn-success { background: var(--success); color: white; }
+
+    /* ===== PROGRESS ===== */
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #8b5cf6);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    /* ===== QUESTION ===== */
+    .question-text {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.5;
+      text-align: center;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ===== OPTIONS ===== */
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn {
+      width: 100%;
+      padding: 16px 20px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-align: left;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .option-btn:not(:disabled):hover { border-color: var(--primary); background: #eef2ff; }
+    .option-btn:not(:disabled):active { transform: scale(0.98); }
+    .option-btn.correct { border-color: var(--success); background: #f0fdf4; color: #166534; }
+    .option-btn.wrong { border-color: var(--danger); background: #fef2f2; color: #991b1b; }
+    .option-label {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: all 0.25s;
+    }
+    .option-btn.correct .option-label { background: var(--success); color: white; }
+    .option-btn.wrong .option-label { background: var(--danger); color: white; }
+
+    /* ===== FEEDBACK ===== */
+    .feedback {
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.5;
+    }
+    .feedback.show { display: flex; animation: fadeIn 0.2s ease; }
+    .feedback.correct-fb { background: #f0fdf4; color: #166534; }
+    .feedback.wrong-fb { background: #fef2f2; color: #991b1b; }
+    .feedback-icon { font-size: 20px; flex-shrink: 0; }
+
+    /* ===== TIMER ===== */
+    .timer-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .timer-num {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      min-width: 28px;
+      text-align: center;
+    }
+    .timer-num.urgent { color: var(--danger); }
+
+    /* ===== RESULT ===== */
+    .score-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      color: white;
+      box-shadow: 0 8px 32px rgba(99,102,241,.35);
+    }
+    .score-num { font-size: 40px; font-weight: 900; line-height: 1; }
+    .score-label { font-size: 12px; opacity: 0.85; }
+    .result-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .stat {
+      text-align: center;
+      padding: 14px 8px;
+      background: var(--bg);
+      border-radius: 12px;
+    }
+    .stat-val { font-size: 22px; font-weight: 800; }
+    .stat-key { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .stat-val.green { color: var(--success); }
+    .stat-val.red { color: var(--danger); }
+    .rank-msg { text-align: center; font-size: 22px; font-weight: 800; }
+    .rank-sub { text-align: center; font-size: 14px; color: var(--muted); }
+
+    /* ===== COUPON ===== */
+    .coupon {
+      background: linear-gradient(135deg, #fff7ed, #fef3c7);
+      border: 2.5px dashed #f59e0b;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .coupon::before, .coupon::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--bg);
+    }
+    .coupon::before { left: -11px; }
+    .coupon::after  { right: -11px; }
+    .coupon-rank { font-size: 11px; font-weight: 800; color: #b45309; letter-spacing: .06em; margin-bottom: 2px; }
+    .coupon-discount { font-size: 52px; font-weight: 900; color: #d97706; line-height: 1.1; margin-bottom: 4px; }
+    .coupon-desc { font-size: 13px; color: var(--muted); }
+    .coupon-code-row { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+    .coupon-code {
+      flex: 1; padding: 10px 14px;
+      background: white; border: 1.5px solid #fcd34d;
+      border-radius: 10px; font-size: 15px; font-weight: 800;
+      font-family: 'Courier New', monospace; color: var(--text); letter-spacing: .06em;
+    }
+    .copy-btn {
+      padding: 10px 16px; background: #f59e0b; color: white;
+      border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap; transition: all .2s;
+    }
+    .copy-btn:active { transform: scale(.95); }
+    .coupon-expiry { font-size: 11px; color: #92400e; opacity: .7; margin-top: 8px; }
+    /* SS / S ランク：紫 */
+    .coupon-ss { background: linear-gradient(135deg, #fdf4ff, #fae8ff); border-color: #c026d3; }
+    .coupon-ss .coupon-rank    { color: #86198f; }
+    .coupon-ss .coupon-discount{ color: #a21caf; }
+    .coupon-ss .coupon-code    { border-color: #e879f9; }
+    .coupon-ss .copy-btn       { background: #c026d3; }
+    .coupon-ss .coupon-expiry  { color: #701a75; }
+    /* A ランク：ゴールド */
+    .coupon-a { background: linear-gradient(135deg, #fffbeb, #fef9c3); border-color: #eab308; }
+    .coupon-a .coupon-rank    { color: #713f12; }
+    .coupon-a .coupon-discount{ color: #ca8a04; }
+    .coupon-a .coupon-code    { border-color: #fde047; }
+    .coupon-a .copy-btn       { background: #ca8a04; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== START SCREEN ===== -->
+  <div class="screen active" id="start-screen">
+    <div class="card header">
+      <div class="logo">📜</div>
+      <h1>福沢諭吉クイズ</h1>
+      <p>近代日本の巨人を知り尽くせ！全10問に挑戦</p>
+    </div>
+
+    <div class="card">
+      <p style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">カテゴリを選ぶ</p>
+      <div class="categories">
+        <button class="category-btn selected" data-category="life" onclick="selectCategory(this)">
+          <span class="emoji">🎓</span>生涯
+        </button>
+        <button class="category-btn" data-category="works" onclick="selectCategory(this)">
+          <span class="emoji">📚</span>著作
+        </button>
+        <button class="category-btn" data-category="thought" onclick="selectCategory(this)">
+          <span class="emoji">💡</span>思想
+        </button>
+        <button class="category-btn" data-category="legacy" onclick="selectCategory(this)">
+          <span class="emoji">🏛️</span>業績
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">難易度</p>
+      <div class="difficulty-row">
+        <button class="diff-btn selected" data-diff="easy" onclick="selectDiff(this)">かんたん</button>
+        <button class="diff-btn" data-diff="medium" onclick="selectDiff(this)">ふつう</button>
+        <button class="diff-btn" data-diff="hard" onclick="selectDiff(this)">むずかしい</button>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startQuiz()">
+      <span>クイズをはじめる</span> <span>→</span>
+    </button>
+  </div>
+
+  <!-- ===== QUIZ SCREEN ===== -->
+  <div class="screen" id="quiz-screen">
+    <div class="card" style="padding:16px 20px">
+      <div class="progress-header">
+        <span id="q-counter">問題 1 / 10</span>
+        <div class="timer-wrap">
+          <span>⏱</span>
+          <span class="timer-num" id="timer">20</span>
+          <span>秒</span>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-top:10px">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="question-text" id="question-text">Loading...</div>
+    </div>
+
+    <div class="options" id="options-list"></div>
+
+    <div class="feedback" id="feedback">
+      <span class="feedback-icon" id="feedback-icon"></span>
+      <span id="feedback-text"></span>
+    </div>
+
+    <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()" style="display:none">
+      次の問題 →
+    </button>
+  </div>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <div class="screen" id="result-screen">
+    <div class="card header">
+      <div class="logo" id="result-emoji">🎉</div>
+      <div class="rank-msg" id="rank-msg"></div>
+      <div class="rank-sub" id="rank-sub"></div>
+    </div>
+
+    <div class="card">
+      <div class="score-circle">
+        <div class="score-num" id="score-num">0</div>
+        <div class="score-label">点 / 100点</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-val green" id="correct-count">0</div>
+          <div class="stat-key">正解</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val red" id="wrong-count">0</div>
+          <div class="stat-key">不正解</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="time-count">0</div>
+          <div class="stat-key">総時間(秒)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:14px">🎫 獲得クーポン</p>
+      <div class="coupon" id="coupon-inner">
+        <div class="coupon-rank" id="coupon-rank"></div>
+        <div class="coupon-discount" id="coupon-discount"></div>
+        <div class="coupon-desc" id="coupon-desc"></div>
+        <div class="coupon-code-row">
+          <div class="coupon-code" id="coupon-code"></div>
+          <button class="copy-btn" id="copy-btn" onclick="copyCoupon()">コピー</button>
+        </div>
+        <div class="coupon-expiry" id="coupon-expiry"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="restart()">もう一度挑戦</button>
+    <button class="btn btn-outline" onclick="showStart()">カテゴリを変える</button>
+  </div>
+
+</div>
+
+<script>
+// ===== QUESTIONS DATABASE =====
+const QUESTIONS = {
+  life: {
+    easy: [
+      { q: "福沢諭吉が生まれた年は？", opts: ["1825年","1835年","1845年","1855年"], ans: 1, exp: "天保5年（1835年）12月12日、大坂堂島浜（現・大阪市）に生まれました。" },
+      { q: "福沢諭吉が設立した学校は？", opts: ["東京大学","早稲田大学","慶應義塾","同志社"], ans: 2, exp: "1858年に江戸・築地で蘭学塾として創設し、後に慶應義塾大学へ発展しました。" },
+      { q: "福沢諭吉が生まれた藩は？", opts: ["薩摩藩","長州藩","中津藩","土佐藩"], ans: 2, exp: "現在の大分県中津市に当たる中津藩（奥平家）の出身です。" },
+      { q: "福沢諭吉の顔が描かれていたお札は？", opts: ["千円札","五千円札","一万円札","五百円玉"], ans: 2, exp: "1984年から2024年まで一万円紙幣の肖像として使用されました。" },
+      { q: "福沢諭吉が蘭学を本格的に学んだ都市は？", opts: ["江戸","長崎","大阪","京都"], ans: 2, exp: "大阪にある緒方洪庵の「適塾」で蘭学を学び、後に塾頭を務めました。" },
+      { q: "福沢諭吉が幕府使節団として初めて渡航した国は？", opts: ["イギリス","フランス","アメリカ","オランダ"], ans: 2, exp: "1860年、咸臨丸に乗り込み初めてアメリカへ渡航しました。" },
+      { q: "福沢諭吉が創刊した新聞は？", opts: ["朝日新聞","読売新聞","時事新報","毎日新聞"], ans: 2, exp: "1882年に時事新報を創刊し、明治時代の世論形成に大きな影響を与えました。" },
+      { q: "福沢諭吉が亡くなった年は？", opts: ["1891年","1895年","1901年","1905年"], ans: 2, exp: "明治34年（1901年）2月3日に脳出血のため68歳で亡くなりました。" },
+      { q: "福沢諭吉の自伝の題名は？", opts: ["学問自伝","福翁自伝","諭吉一代記","明治の回想"], ans: 1, exp: "「福翁自伝」（1899年）は口述筆記による自伝で、生涯を生き生きと描いています。" },
+      { q: "緒方洪庵が大阪で開いた塾の名前は？", opts: ["鳴滝塾","咸宜園","適塾","松下村塾"], ans: 2, exp: "大阪・北区に現存する「適塾」で、福沢はここで蘭学を修め塾頭となりました。" },
+    ],
+    medium: [
+      { q: "福沢諭吉が欧米に渡った回数は？", opts: ["1回","2回","3回","4回"], ans: 2, exp: "1860年（米）・1861〜62年（欧米）・1867年（米）の計3回渡航しました。" },
+      { q: "福沢諭吉が初めて英語を学ぶきっかけは？", opts: ["米国人と友人になった","横浜で蘭語が通じなかった","幕府に命じられた","父から英書を渡された"], ans: 1, exp: "開港後の横浜を訪れた際、西洋人と蘭語で話せず英語の必要性を痛感し独学を始めました。" },
+      { q: "福沢諭吉の父・百助の職業は？", opts: ["商人","藩士（武士）","農民","医者"], ans: 1, exp: "父・福沢百助は中津藩の下級藩士で、漢学に通じた人物でした。" },
+      { q: "福沢諭吉が1860年に渡米した際に乗った船は？", opts: ["黒船","咸臨丸","開陽丸","千歳丸"], ans: 1, exp: "幕府の軍艦・咸臨丸に随行員として乗り込み、太平洋を横断してサンフランシスコに到着しました。" },
+      { q: "福沢諭吉が明治政府への仕官を断り続けた理由は？", opts: ["給料が低かった","民間での独立を重んじたから","体調が優れなかった","家族に反対された"], ans: 1, exp: "「独立自尊」の精神から、政府に依存せず民間の立場で日本を啓蒙する道を貫きました。" },
+      { q: "慶應義塾が東京・三田に移転したのはいつ？", opts: ["1868年","1871年","1873年","1880年"], ans: 2, exp: "明治6年（1873年）に現在の港区三田に移転し、大学の基盤を固めました。" },
+      { q: "「脱亜論」が発表された媒体は？", opts: ["学問のすゝめ","時事新報","文明論之概略","福翁自伝"], ans: 1, exp: "1885年3月16日付の時事新報に社説として掲載されました。" },
+      { q: "福沢諭吉の第二回渡航（1861〜62年）の主な訪問先は？", opts: ["アメリカのみ","ヨーロッパ各国","中国・朝鮮","インド・東南アジア"], ans: 1, exp: "幕府の欧州使節団に通訳として同行し、フランス・イギリス・オランダ等を視察しました。" },
+      { q: "福沢諭吉が故郷・中津に設立した学校は？", opts: ["中津英学校","慶應義塾中津分校","中津藩校","諭吉塾"], ans: 0, exp: "1871年に故郷・中津に英学校（後に慶應義塾中津分校の前身）を設立しました。" },
+      { q: "適塾で福沢が担った役職は？", opts: ["塾頭","副塾長","一般塾生","教務主任"], ans: 0, exp: "福沢は頭角を現し、在塾中に塾頭（最上位の塾生リーダー）を務めました。" },
+    ],
+    hard: [
+      { q: "慶應義塾の名称の由来となった元号「慶應」は何年〜何年？", opts: ["1860〜1863年","1865〜1868年","1868〜1871年","1870〜1873年"], ans: 1, exp: "元号「慶応」は1865〜1868年で、この時期に江戸・築地の塾が「慶應義塾」と命名されました。" },
+      { q: "福沢諭吉が最初に訪れたアメリカの都市は？", opts: ["ニューヨーク","ワシントンD.C.","サンフランシスコ","ホノルル"], ans: 2, exp: "咸臨丸は1860年2月、サンフランシスコに入港しました。その後ワシントンD.C.にも赴いています。" },
+      { q: "「福翁自伝」が口述筆記されたのは何歳頃？", opts: ["40代","50代","60代","70代"], ans: 2, exp: "1898〜1899年、63〜64歳のときに口述筆記され、翌年刊行されました。" },
+      { q: "福沢諭吉が批判した「官尊民卑」とはどういう意識？", opts: ["官吏を尊び民を蔑む意識","軍を最優先する考え","外国を崇める態度","農業を重視する思想"], ans: 0, exp: "お上（政府・官吏）を過度に尊重し民間を低く見る封建的意識で、福沢はこれを近代化の障壁と批判しました。" },
+      { q: "福沢諭吉の死因は？", opts: ["肺炎","脳出血（脳卒中）","結核","胃がん"], ans: 1, exp: "晩年に数度の脳卒中発作に見舞われ、1901年2月3日に脳出血で死去しました。" },
+      { q: "時事新報が廃刊したのはいつ？", opts: ["1920年","1928年","1936年","1945年"], ans: 2, exp: "1936年に大阪毎日新聞・東京日日新聞系と合併する形で廃刊となりました。" },
+      { q: "福沢諭吉が幼少期に受けた教育は主に何学？", opts: ["英学","蘭学","漢学","仏学"], ans: 2, exp: "幼少期は中津藩で漢学（四書五経など）を学びましたが、後に蘭学・英学へ転じました。" },
+      { q: "福沢諭吉が三田演説館を建設した年は？", opts: ["1870年","1875年","1880年","1885年"], ans: 1, exp: "1875年（明治8年）、日本初の演説専用施設として三田演説館を竣工し、現在も重要文化財として現存します。" },
+      { q: "慶應義塾の前身となる蘭学塾が最初に開かれた場所は？", opts: ["芝・新銭座","三田","神田","築地・鉄砲洲"], ans: 3, exp: "1858年に江戸・築地鉄砲洲の中津藩中屋敷内で蘭学塾を開いたのが慶應義塾の起源です。" },
+      { q: "福沢諭吉が翻訳・参考にしたイギリスの百科全書的教科書は？", opts: ["ブリタニカ百科事典","チェンバーズの教科書","オックスフォード辞典","ジョンソン辞書"], ans: 1, exp: "Chambers's Educational Courseを参考に「西洋事情」を執筆し、西洋の知識を日本に伝えました。" },
+    ]
+  },
+  works: {
+    easy: [
+      { q: "「学問のすゝめ」の有名な冒頭の言葉は？", opts: ["「学べ学べ」","「天は人の上に人を造らず」","「独立自尊」","「文明開化」"], ans: 1, exp: "初編（1872年）の冒頭「天は人の上に人を造らず、人の下に人を造らず」は最も有名な一節です。" },
+      { q: "「学問のすゝめ」が出版された年は？", opts: ["1868年","1872年","1875年","1880年"], ans: 1, exp: "初編は明治5年（1872年）に刊行され、全17編が1876年まで出版されました。" },
+      { q: "福沢諭吉が西洋の文明・制度を紹介した著作は？", opts: ["学問のすゝめ","西洋事情","文明論之概略","福翁自伝"], ans: 1, exp: "「西洋事情」（1866〜1870年）は西洋の政治・社会・文化を幅広く日本に紹介しました。" },
+      { q: "「学問のすゝめ」で特に重視した「学問」とは？", opts: ["漢詩・書道","実生活に役立つ実学","儒教の礼法","武道・武術"], ans: 1, exp: "読み書き・算術・地理・歴史・物理など、実際の生活・社会に役立つ「実学」を強調しました。" },
+      { q: "「文明論之概略」が刊行された年は？", opts: ["1872年","1875年","1878年","1882年"], ans: 1, exp: "明治8年（1875年）に刊行された福沢の代表的な文明論・思想書です。" },
+      { q: "「脱亜論」が発表された年は？", opts: ["1875年","1880年","1885年","1890年"], ans: 2, exp: "1885年（明治18年）3月16日に時事新報の社説として掲載されました。" },
+      { q: "「学問のすゝめ」は全部で何編？", opts: ["5編","10編","17編","20編"], ans: 2, exp: "1872〜1876年にかけて初編〜第十七編が順次刊行されました。" },
+      { q: "「西洋事情」の初編が刊行された年は？", opts: ["1862年","1866年","1870年","1875年"], ans: 1, exp: "慶應2年（1866年）に初編が刊行され、ベストセラーとなりました。" },
+      { q: "「学問のすゝめ」が批判した学問は？", opts: ["英学","漢学・儒学","蘭学","医学"], ans: 1, exp: "実生活に役立たない虚学（漢詩・儒学の形式的礼法など）を批判し、実学を推奨しました。" },
+      { q: "福沢諭吉の自伝の書かれ方（形式）は？", opts: ["自筆日記","口述筆記","手紙形式","弟子の記録"], ans: 1, exp: "「福翁自伝」は弟子の石河幹明が聞き書きした口述筆記の形式で書かれています。" },
+    ],
+    medium: [
+      { q: "「学問のすゝめ」の累計発行部数（当時）は約何部？", opts: ["5万部","70万部","340万部","1000万部"], ans: 2, exp: "17編の累計で約340万部が売れたとされ、当時の人口比で見ると驚異的なベストセラーでした。" },
+      { q: "「文明論之概略」で日本を位置づけたのは？", opts: ["文明国","半開国","野蛮国","超文明国"], ans: 1, exp: "当時の日本を「半開国（半開化）」と位置付け、真の文明国への脱却を論じました。" },
+      { q: "「帝室論」（1882年）で福沢が論じたのは？", opts: ["天皇制の廃止","皇室を政治から独立させ精神的支柱とする","武家政治の復活","共和制の導入"], ans: 1, exp: "天皇は政治から距離を置き国民統合の精神的象徴であるべき、と論じました。" },
+      { q: "「脱亜論」で主張された内容は？", opts: ["アジア諸国との連帯強化","清・朝鮮との関係を断ち欧米文明に倣う","武力でアジアを制圧する","鎖国を復活させる"], ans: 1, exp: "近代化が進まない隣国と同一視されないよう、欧米文明の仲間として歩むべきと論じました。" },
+      { q: "「西洋事情」で日本に初めて紹介された概念として正しいのは？", opts: ["印刷術","議会制度・病院・新聞","コーヒー","鉄砲"], ans: 1, exp: "議会制度・病院・新聞・学校・博物館など多くの西洋文明の概念をこの著書で紹介しました。" },
+      { q: "「学者安心論」で福沢が批判したのは？", opts: ["欧米の学者","政府に依存する学者","宗教家","商人"], ans: 1, exp: "政府の庇護に甘えて独立心を失った学者の姿勢を痛烈に批判しました。" },
+      { q: "「通俗民権論」（1878年）で論じたテーマは？", opts: ["民権運動への批判","民権の重要性と政府との関係","外国との条約","農民の権利"], ans: 1, exp: "人民が独立した権利を持つことの重要性を、一般読者向けにわかりやすく解説しました。" },
+      { q: "「男女交際論」（1886年）で福沢が主張したのは？", opts: ["男女の完全平等","社交における男女の自由な交際","女性の政治参加","男女別学の推進"], ans: 1, exp: "西洋のように男女が公の場で礼節をもって自由に交際する文化の必要性を説きました。" },
+      { q: "「民情一新」（1879年）で「電信・鉄道」に見た意義は？", opts: ["経済的利益のみ","民衆の政治意識の覚醒と民権運動の促進","外国との競争強化","軍事的強化"], ans: 1, exp: "近代的通信・交通が民衆の情報共有と政治参加意識を高めると論じました。" },
+      { q: "「福翁百話」（1897年）の内容は？", opts: ["欧米旅行記","日常の思想・処世訓を綴った随筆","政治論文集","経済論集"], ans: 1, exp: "晩年に執筆した随筆集で、日常生活に根ざした平易な言葉で人生観・社会観を語りました。" },
+    ],
+    hard: [
+      { q: "「文明論之概略」で福沢が依拠した文明論の主な参照先は？", opts: ["ルソー","ギゾー（フランソワ・ギゾー）","J.S.ミル","スペンサー"], ans: 1, exp: "フランスの歴史家ギゾーの文明史観を基軸に、日本の文明化の道筋を論じました。" },
+      { q: "「学問のすゝめ」第十七編で論じた「演説」の役割は？", opts: ["娯楽としての演芸","民主主義の基盤となる言論の訓練","政府高官のみの手段","西洋の風習の輸入"], ans: 1, exp: "パブリックスピーキングと自由な議論が近代市民社会の基盤であると論じ、演説の普及を推進しました。" },
+      { q: "「西洋事情」外編（1868年）で紹介されなかった概念は？", opts: ["共和政治","租税・国債","共産主義","議会制度"], ans: 2, exp: "外編では政治制度・経済・租税・国債・歳入等を詳解しましたが、共産主義は含まれていません。" },
+      { q: "「文明論之概略」で文明進歩の指標とした概念は？", opts: ["経済力","知徳（智恵と道徳）の発展","軍事力","人口の増加"], ans: 1, exp: "智（理性・知識）と徳（道徳）の両面の高まりが文明進歩の尺度であると論じました。" },
+      { q: "「学問のすゝめ」で示された「一身独立して一国独立す」の論理は？", opts: ["国が強ければ個人も強い","個人が自立してこそ国家の独立が実現する","経済成長が独立をもたらす","軍事力が独立の基礎"], ans: 1, exp: "国家の真の独立は、国民一人一人の自立・独立心の積み重ねから生まれるという論旨です。" },
+      { q: "「脱亜論」の著者について現在の学界での見方は？", opts: ["確実に福沢本人","諸説あり福沢本人か弟子・編集者か議論が続く","別人の作","共著と確定"], ans: 1, exp: "文体・思想的背景から福沢自身の著作か弟子・石河幹明らの手によるかに学術的議論があります。" },
+      { q: "「福翁自伝」の英訳が初めて刊行されたのはいつ？", opts: ["1899年","1934年","1960年","1980年"], ans: 1, exp: "Eiichi Kiyookaによる英訳版『The Autobiography of Yukichi Fukuzawa』が1934年に出版されました。" },
+      { q: "「通俗国権論」（1878年）で論じた「国権」と「民権」の関係は？", opts: ["国権が民権に常に優先する","両者は相互に支え合う","民権が国権を不要にする","両者は根本的に矛盾する"], ans: 1, exp: "国家の主権（国権）と国民の権利（民権）は対立ではなく相互補完の関係にあると論じました。" },
+      { q: "「西洋事情」初編の刊行部数は当時何部だったか？", opts: ["約1万部","約15万部","約50万部","約100万部"], ans: 1, exp: "初編は約15万部が売れ、当時としては空前のベストセラーとなりました。" },
+      { q: "「学問のすゝめ」が参考にしたアメリカの独立宣言の精神と関係する言葉は？", opts: ["全ての人間は平等に造られた","自由・平等・博愛","万人の万人に対する闘争","最大多数の最大幸福"], ans: 0, exp: "「天は人の上に人を造らず」はジェファーソンの「All men are created equal」に着想を得たとされます。" },
+    ]
+  },
+  thought: {
+    easy: [
+      { q: "「独立自尊」とはどういう意味？", opts: ["孤独に生きる","自ら考え行動し他に依存しない","国家から完全に離れる","財産を持つことが自由"], ans: 1, exp: "他者・権力に頼らず自分の理性で判断し自立して行動すること。福沢思想の核心です。" },
+      { q: "福沢諭吉が重視した「実学」とはどんな学問？", opts: ["漢詩・書道","実生活に役立つ知識（読み書き・算術等）","儒教の礼法","武道・武術"], ans: 1, exp: "読み書き・算術・地理・歴史・物理など、実際の社会生活に役立つ知識を「実学」と呼びました。" },
+      { q: "「天は人の上に人を造らず」が示すのは？", opts: ["身分制度の肯定","生まれによる差別の否定・人間の平等","神が人を創造した事実","努力は不要だという考え"], ans: 1, exp: "生まれながらの身分差別を否定し、人間は平等であると宣言した福沢の基本的立場です。" },
+      { q: "福沢諭吉が最も強く批判した思想体系は？", opts: ["仏教","儒教","キリスト教","神道"], ans: 1, exp: "実用性のない形式と上下関係を強調する儒教的価値観を、近代化の障害として厳しく批判しました。" },
+      { q: "「文明開化」として福沢が日本に求めたのは？", opts: ["鎖国の維持","西洋文明の受容と社会の近代化","伝統文化の完全な保護","軍事力の強化のみ"], ans: 1, exp: "政治・経済・教育など社会全体の近代化・文明化を推進することを求めました。" },
+      { q: "「脱亜入欧」の思想が意味するのは？", opts: ["アジアを軍事制圧する","アジア的停滞を脱し西洋文明の秩序に加わる","アジアの盟主となる","欧州へ移住する"], ans: 1, exp: "近代化が遅れるアジアの伝統・体質から脱却し、西洋近代文明の一員として歩む姿勢です。" },
+      { q: "福沢諭吉が否定した「権威への盲従」とは？", opts: ["親の言葉に従うこと","理性を持たず権威・習慣に盲目的に服従すること","法律を守ること","師匠を尊重すること"], ans: 1, exp: "理性的判断を放棄して権威や慣習に無批判に従う姿勢を、近代化の最大の障壁と見なしました。" },
+      { q: "福沢諭吉が政府への仕官を断り続けた根本にある考えは？", opts: ["政府への不満","民間から社会を変える独立の精神","体調の問題","経済的理由"], ans: 1, exp: "「独立自尊」の精神から、官に依存せず民間・言論の立場で日本を啓蒙する道を選びました。" },
+      { q: "福沢諭吉が「惑溺（わくでき）」と呼んで批判したのは？", opts: ["西洋文明への過度な崇拝","宗教・迷信・権威への盲目的な依存","学問への没頭","商業への傾倒"], ans: 1, exp: "理性的判断を妨げる迷信・伝統・権威への過度な依存を「惑溺」として批判しました。" },
+      { q: "福沢諭吉が重視した「競争」の意義は？", opts: ["弱者を排除する手段","社会の進歩・文明化を促す動力","戦争の正当化","商業上の利益"], ans: 1, exp: "健全な競争が個人と社会の発展をもたらすエンジンになると論じました。" },
+    ],
+    medium: [
+      { q: "福沢諭吉の自由主義思想に最も影響を与えた哲学者は？", opts: ["ルソー","J.S.ミル","ヘーゲル","カント"], ans: 1, exp: "「自由論」などJ.S.ミルの功利主義・自由主義が福沢の独立・自由の思想形成に大きく影響しました。" },
+      { q: "「一身独立して一国独立す」の論理的順序は？", opts: ["国家独立→個人独立","個人独立→国家独立","両者は同時に達成される","どちらか一方でよい"], ans: 1, exp: "まず個人が自立することが国家の真の独立の前提条件であるという論旨です。" },
+      { q: "福沢諭吉が理想とした政府の役割は？", opts: ["人民を管理・指導する大きな政府","最小限の役割で人民の自由を保障する政府","経済を直接管理する政府","軍事最優先の政府"], ans: 1, exp: "政府は小さく、個人の自由・権利を守ることが本来の役割であると論じました。" },
+      { q: "「文明論之概略」で「半開の国」が陥る危険として指摘したのは？", opts: ["経済的破綻","形だけ模倣して精神を失う疑似文明化","軍事的敗北","人口の減少"], ans: 1, exp: "西洋を外形的に真似るだけで独立の精神・主体性を欠く「偽文明化」の危険を警告しました。" },
+      { q: "福沢諭吉の「道徳」観で最大の批判対象は？", opts: ["西洋キリスト教道徳","儒教的な上下関係・服従の道徳","武士道","仏教的な慈悲"], ans: 1, exp: "形式的な上下服従を強調する儒教道徳を批判し、理性・自由・平等に基づく近代的道徳を重んじました。" },
+      { q: "福沢諭吉の教育観の最大の特徴は？", opts: ["エリートのみへの高等教育","実学に基づく万人への教育普及","武士道精神の教育","宗教教育の充実"], ans: 1, exp: "身分・性別を問わず実学教育を普及させることで国全体の文明化を目指しました。" },
+      { q: "「自由」の実現に必要な基礎として福沢が強調したのは？", opts: ["政府の許可","個人の独立と自律","家族の支援","宗教的信仰"], ans: 1, exp: "自由は自ら考え判断できる独立した個人があって初めて成り立つ、と論じました。" },
+      { q: "「半官半民」の中間的立場を批判した福沢の主張は？", opts: ["政府と協力すべき","完全に民間として独立し政府に依存しない","外国資本を活用する","貴族制を設ける"], ans: 1, exp: "民間人は政府の補助・恩恵に依存せず、完全に自立した立場を保つべきと論じました。" },
+      { q: "福沢諭吉が「数理学（自然科学）」を重視した理由は？", opts: ["軍事強化に必要だから","合理的思考・実証精神を育てるため","西洋で流行していたから","金儲けに直結するから"], ans: 1, exp: "自然科学の実証的・合理的方法論が近代的思考の基盤になると確信していました。" },
+      { q: "「独立自尊」概念が最初に体系的に示された著作は？", opts: ["西洋事情","学問のすゝめ初編","文明論之概略","福翁自伝"], ans: 1, exp: "1872年の「学問のすゝめ」初編で「一身独立して一国独立す」として初めて体系化されました。" },
+      { q: "福沢諭吉が支持した「ナショナリズム」の特徴は？", opts: ["アジア連帯型","西洋列強に対抗する日本の国家的独立を軸とする","民族主義的排外主義","宗教的ナショナリズム"], ans: 1, exp: "個人の自由を基盤としつつ、西洋列強への対抗上、日本の国家的独立も強く重視しました。" },
+    ],
+    hard: [
+      { q: "「文明」概念でギゾーから借用した核心的な区別は？", opts: ["野蛮と文明の二分法","物質的文明と精神的文明の二層構造","東洋と西洋の対比","古代と近代の断絶"], ans: 1, exp: "ギゾーに倣い物質的繁栄と精神的（知的・道徳的）進歩の両面から文明を分析しました。" },
+      { q: "福沢諭吉の「社会契約」観に最も近い西洋思想家は？", opts: ["ホッブズ","ロック","ルソー","J.S.ミル"], ans: 3, exp: "福沢は社会契約論より個人の自由・独立を重視する立場で、ミルの自由主義に最も近いとされます。" },
+      { q: "「惑溺」批判で福沢が理想とした認識論的態度は？", opts: ["経験則のみに従う","実証的・懐疑的思考による合理的判断","権威を信頼する","直感を重視する"], ans: 1, exp: "権威や先例を無批判に受け入れず、実証と理性に基づいて判断する近代的態度を理想としました。" },
+      { q: "「学問のすゝめ」の「人権」概念と天賦人権論の関係は？", opts: ["完全に一致する","基本的に支持しつつ実践的修得の側面を強調","天賦人権を否定した","無関係"], ans: 1, exp: "自然権思想を受容しつつ、権利は学問・実践によって獲得・維持するものと論じました。" },
+      { q: "福沢が明治政府の「文明開化」政策を部分的に批判した理由は？", opts: ["西洋化が急速すぎる","政府主導の上からの官製文明化だから","外国資本が入りすぎる","伝統文化が失われる"], ans: 1, exp: "真の文明は国民一人一人の自発的な学びと独立心から生まれるべきで、官製では根付かないと考えました。" },
+      { q: "「文明論之概略」で福沢が文明の進歩を論じる際に用いた歴史の「三段階」は？", opts: ["野蛮・半開・文明","古代・中世・近代","東洋・西洋・世界","伝統・移行・近代"], ans: 0, exp: "ギゾーの枠組みを参照し「野蛮→半開→文明」の三段階で文明の発展を論じました。" },
+      { q: "福沢諭吉の「独立」概念でいう独立の主体は主に誰か？", opts: ["国家","個人（一身）","家族","共同体"], ans: 1, exp: "「一身の独立」すなわち個々の人間の精神的・知的自立が出発点で、国家独立はその結果とされます。" },
+      { q: "「民情一新」（1879年）で福沢が予測した「民権」発展の原動力は？", opts: ["武力革命","電信・鉄道などの近代インフラによる情報流通","外国からの圧力","宗教運動"], ans: 1, exp: "近代インフラが情報を流通させ民衆の政治意識を覚醒し、民権運動を後押しすると論じました。" },
+      { q: "「学問のすゝめ」での「政府と人民の関係」を表す比喩は？", opts: ["親と子","主人と家来","契約する双方の当事者","師匠と弟子"], ans: 2, exp: "政府と人民は対等な権利を持つ当事者（契約関係）として描かれており、主従関係ではないと論じました。" },
+      { q: "「脱亜論」の思想的背景にある福沢の対外認識の核心は？", opts: ["アジアの民族的優秀性","文明の進度による国際的地位の差異","人種的差別","地政学的計算"], ans: 1, exp: "文明化の進度が国際的な地位を決定するという認識から、日本が「文明国」の仲間入りを急ぐよう論じました。" },
+      { q: "「学問のすゝめ」で批判した「智恵なき者の貧富」の原因は？", opts: ["政府の失政","学問をしないことによる無知・無能","天性の才能の欠如","身分制度"], ans: 1, exp: "生まれながらの身分差はなく、貧富の差は学問をするかどうか（知識・能力の差）から生じると論じました。" },
+    ]
+  },
+  legacy: {
+    easy: [
+      { q: "福沢諭吉が設立した学校の現在の名称は？", opts: ["東京大学","慶應義塾大学","一橋大学","法政大学"], ans: 1, exp: "1858年設立の慶應義塾が発展し、現在の慶應義塾大学となりました。" },
+      { q: "福沢諭吉が創刊した時事新報の特徴は？", opts: ["政府の機関紙","政府から独立した民間の言論紙","外国語新聞","娯楽新聞"], ans: 1, exp: "政府・藩閥から独立した立場で論評を行う民間紙として創刊され、世論形成に影響を与えました。" },
+      { q: "福沢諭吉が一万円札に採用されたのはいつから？", opts: ["1968年","1975年","1984年","1990年"], ans: 2, exp: "1984年（昭和59年）から2024年まで、一万円紙幣の肖像として使用されました。" },
+      { q: "現在の三田キャンパスに残る福沢ゆかりの重要文化財は？", opts: ["福沢記念館","三田演説館","適塾","福沢図書館"], ans: 1, exp: "1875年竣工の三田演説館は日本初の演説専用施設で、現在も重要文化財として現存します。" },
+      { q: "慶應義塾大学は日本の大学史においてどう位置づけられる？", opts: ["最初の国立大学","最初期の私立高等教育機関の一つ","最初の女子大学","最初の医科大学"], ans: 1, exp: "慶應義塾は日本最初期の私立高等教育機関の一つとして、近代教育史に重要な位置を占めます。" },
+      { q: "「学問のすゝめ」が現代でも読まれる主な理由は？", opts: ["古典的文語体の美しさ","自由・独立・実学の普遍的メッセージ","政治的主張の先進性","詳細な歴史記録"], ans: 1, exp: "独立自尊・自由・実学の精神は時代を超えた普遍的価値として、現代でも広く共感されています。" },
+      { q: "福沢諭吉の命日（2月3日）に慶應義塾大学で行われる行事は？", opts: ["諭吉祭","創立記念日","福澤先生記念日","義塾記念日"], ans: 2, exp: "毎年2月3日を「福澤先生記念日」として、三田キャンパスで記念行事が行われています。" },
+      { q: "慶應義塾の建学精神として掲げられる福沢の言葉は？", opts: ["文明開化","独立自尊","脱亜入欧","実学"], ans: 1, exp: "「独立自尊」は慶應義塾の建学精神として現在も掲げられ、教育の根幹をなしています。" },
+      { q: "2024年の新一万円札の肖像に選ばれたのは誰？", opts: ["伊藤博文","渋沢栄一","夏目漱石","野口英世"], ans: 1, exp: "2024年に発行された新一万円札には、実業家・渋沢栄一が採用されました。" },
+      { q: "福沢諭吉が日本に初めて体系的に紹介したとされる文化的実践は？", opts: ["議会制度","演説（パブリックスピーキング）","新聞","大学制度"], ans: 1, exp: "1875年に三田演説館を建設し、日本に演説文化を根付かせた先駆者として知られます。" },
+    ],
+    medium: [
+      { q: "三田演説館の建設年と現在の文化財指定は？", opts: ["1870年・国宝","1875年・重要文化財","1880年・都指定文化財","1885年・世界遺産"], ans: 1, exp: "1875年（明治8年）竣工。現存する日本最古の演説専用施設として重要文化財に指定されています。" },
+      { q: "時事新報が廃刊後に合流した新聞系列は？", opts: ["朝日新聞系","東京日日新聞・大阪毎日新聞系（毎日新聞の前身）","読売新聞系","中外商業新報系"], ans: 1, exp: "1936年に東京日日新聞・大阪毎日新聞系と合併する形で廃刊となりました。" },
+      { q: "福沢諭吉の「演説」普及活動が日本社会に与えた影響は？", opts: ["伝統的雅楽の普及","自由民権運動・議会政治の言論文化形成への貢献","武道の普及","茶道の近代化"], ans: 1, exp: "演説・議論の文化を根付かせたことが、自由民権運動や後の議会政治の言論文化を支えました。" },
+      { q: "「学問のすゝめ」が明治社会に与えた最も直接的な影響は？", opts: ["明治政府の法律改正","民間における学問・実業熱の高まり","明治政府の樹立","廃刀令の制定"], ans: 1, exp: "「学問で身を立てる」という意識が庶民に広まり、明治期の教育熱・実業精神の高揚を促しました。" },
+      { q: "慶應義塾大学のモットー「Independent and Innovative」の「Independent」が体現する思想は？", opts: ["文明開化","独立自尊","脱亜入欧","実学主義"], ans: 1, exp: "「Independent（独立）」は福沢の「独立自尊」を、「Innovative（先駆）」は実学精神を体現しています。" },
+      { q: "福沢諭吉の業績として正しくないのは？", opts: ["慶應義塾の設立","時事新報の創刊","西洋文明の著作による紹介","明治政府初代内閣総理大臣"], ans: 3, exp: "初代内閣総理大臣は伊藤博文です。福沢は明治政府への仕官を拒み、民間の立場を貫きました。" },
+      { q: "「独立自尊」思想が21世紀に再評価される背景は？", opts: ["封建主義の復活","AI・情報化時代に自律的思考力の重要性が増したから","儒教道徳の見直し","グローバル化への反動"], ans: 1, exp: "情報・AI時代において「自ら考え判断する能力」が問われるようになり、独立自尊の精神が再注目されています。" },
+      { q: "福沢諭吉の思想が明治期の女子教育拡大に果たした役割は？", opts: ["女子大学を直接設立した","女性への実学教育普及の思想的根拠を提供した","女性の政治参加を禁じた","男女別学を推進した"], ans: 1, exp: "「万人への実学」「男女の交際」論が、明治期の女子教育拡大の思想的根拠の一つとなりました。" },
+      { q: "慶應義塾が現在の三田に移転した経緯は？", opts: ["火災後の再建","明治政府の命令","政府への依存を脱する自主的な移転・拡充","財政難による移転"], ans: 2, exp: "1873年（明治6年）に現在の港区三田に自主的に移転し、大学として本格的な発展を遂げました。" },
+      { q: "「西洋事情」の刊行が日本社会に与えた最大の影響は？", opts: ["蘭学の普及","西洋文明の実態を広く知らしめ開国・近代化の機運を高めた","鎖国政策の強化","武家社会の再興"], ans: 1, exp: "西洋の政治・経済・文化の実態を伝え、日本人の世界観を広げ近代化への機運を大いに高めました。" },
+      { q: "福沢諭吉の影響を受けた明治期の人物・運動として正しいのは？", opts: ["尊皇攘夷運動","自由民権運動の担い手たちへの思想的影響","廃仏毀釈運動","士族反乱の指導者たち"], ans: 1, exp: "「学問のすゝめ」「文明論之概略」は自由民権運動の担い手に広く読まれ、思想的影響を与えました。" },
+    ],
+    hard: [
+      { q: "慶應義塾大学が日本初として設置した学部は？", opts: ["法学部","文学部（大学部文学科）","経済学部（理財科）","理工学部"], ans: 2, exp: "1890年に大学部理財科（経済学科）を設置したことが、日本初の経済学を中心とする高等教育とされます。" },
+      { q: "三田演説館の建築様式の特徴は？", opts: ["純和風建築","西洋风木造洋館（コロニアル様式）","鉄骨造","石造建築"], ans: 1, exp: "木造二階建の洋館建築で、近代日本の黎明期を象徴する建物として重要文化財に指定されています。" },
+      { q: "「独立自尊」精神が現代の慶應義塾教育に具体的に反映されている例は？", opts: ["政府への全面協力","自己判断・自主研究・実践的教育の重視","伝統的礼法の教育","武道必修科目の設置"], ans: 1, exp: "「独立自尊」は自己判断・創造的研究・実践的学問を重んじる慶應の教育文化に生きています。" },
+      { q: "時事新報の創刊時（1882年）の政治的立場は？", opts: ["明治政府の支持紙","政府・藩閥から距離を置く中立的民間紙","自由党の機関紙","外国資本の新聞"], ans: 1, exp: "創刊当初から「不党不偏」を掲げ、政府・藩閥に依存しない独立した論評を行いました。" },
+      { q: "「学問のすゝめ」が当時の識字率向上に果たした役割は？", opts: ["役割なし","平易な文体で広く読まれ実学・教育熱を庶民に普及させた","政府の教育政策を代替した","識字率を下げた"], ans: 1, exp: "平易な口語体・和文で書かれた本書は庶民にも読まれ、明治期の教育普及と識字率向上に貢献しました。" },
+      { q: "福沢諭吉の「ジャーナリズム論」の核心は？", opts: ["政府と協調する御用報道","権力から独立した言論が民主主義を支える","娯楽的報道の優先","外国報道の翻訳が主目的"], ans: 1, exp: "政府・権力から独立した言論・報道こそが市民社会と民主主義を支える基盤と論じました。" },
+      { q: "「脱亜論」後の東アジアにおける日本外交への長期的影響として現在議論されるのは？", opts: ["アジア連帯外交の基盤を作った","日本の対外膨張・植民地主義の思想的根拠の一つとなりえた可能性","鎖国政策の復活","中立外交の基礎となった"], ans: 1, exp: "脱亜論的な文明優劣観が、後の日本の対外膨張・植民地政策の思想的背景の一つとなりえたと現在も議論されます。" },
+      { q: "「演説」文化普及の歴史的意義として最も学術的に評価されるのは？", opts: ["西洋語学教育の推進","公開討論・言論による意見表明という近代的政治文化の移植","武道と演説の融合","外交官育成"], ans: 1, exp: "演説・討論文化の定着が議会政治・自由民権運動・言論の自由という近代的政治文化の基盤を作りました。" },
+      { q: "慶應義塾の「義塾」という名称に込められた意味は？", opts: ["義理と人情を重んじる塾","公共の精神（義）に基づき万人に開かれた塾","武士道の義に根ざした塾","儒教の義を教える塾"], ans: 1, exp: "「義塾」は公共の精神・社会への奉仕を意味し、特定藩や個人への従属を脱した開かれた塾であることを示します。" },
+      { q: "福沢諭吉の思想的遺産が「近代日本の啓蒙主義」として評価される核心的理由は？", opts: ["政府の近代化政策を主導したから","個人の自由・独立・実学を通じて上からでなく下から社会を変えようとしたから","軍事力強化を論じたから","外国文明を排除したから"], ans: 1, exp: "官主導でなく民間・個人の自立から社会を変える啓蒙の姿勢が、西洋啓蒙主義と共鳴し高く評価されます。" },
+      { q: "「学問のすゝめ」が日本の近代化に果たした役割として最も包括的な評価は？", opts: ["経済発展の直接的原動力","封建的秩序を精神的に解体し近代的個人と市民社会意識を形成した","明治政府の政策を正当化した","西洋技術の普及を担った"], ans: 1, exp: "身分制の精神的解体、個人の自立・平等意識の覚醒、実学重視の近代的教育観の普及という多面的な役割を果たしました。" },
+    ]
+  }
+};
+
+// ===== STATE =====
+let state = {
+  category: 'life',
+  difficulty: 'easy',
+  questions: [],
+  current: 0,
+  score: 0,
+  correct: 0,
+  answered: false,
+  timerVal: 20,
+  timerInterval: null,
+  startTime: 0,
+  totalTime: 0,
+};
+
+const TIMER_LIMIT = { easy: 20, medium: 15, hard: 12 };
+const LABELS = ['A', 'B', 'C', 'D'];
+
+// ===== UI HELPERS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function selectCategory(el) {
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.category = el.dataset.category;
+}
+
+function selectDiff(el) {
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.difficulty = el.dataset.diff;
+}
+
+// ===== QUIZ LOGIC =====
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function startQuiz() {
+  const pool = QUESTIONS[state.category][state.difficulty];
+  state.questions = shuffle([...pool]).slice(0, 10);
+  state.current = 0;
+  state.score = 0;
+  state.correct = 0;
+  state.startTime = Date.now();
+  showScreen('quiz-screen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = state.questions[state.current];
+  state.answered = false;
+
+  // progress
+  const pct = (state.current / state.questions.length) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('q-counter').textContent = `問題 ${state.current + 1} / ${state.questions.length}`;
+
+  // question
+  document.getElementById('question-text').textContent = q.q;
+
+  // options
+  const ol = document.getElementById('options-list');
+  ol.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-label">${LABELS[i]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(i);
+    ol.appendChild(btn);
+  });
+
+  // feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  document.getElementById('next-btn').style.display = 'none';
+
+  // timer
+  clearInterval(state.timerInterval);
+  state.timerVal = TIMER_LIMIT[state.difficulty];
+  updateTimer();
+  state.timerInterval = setInterval(tickTimer, 1000);
+}
+
+function tickTimer() {
+  state.timerVal--;
+  updateTimer();
+  if (state.timerVal <= 0) {
+    clearInterval(state.timerInterval);
+    if (!state.answered) timeOut();
+  }
+}
+
+function updateTimer() {
+  const el = document.getElementById('timer');
+  el.textContent = state.timerVal;
+  el.className = 'timer-num' + (state.timerVal <= 5 ? ' urgent' : '');
+}
+
+function timeOut() {
+  state.answered = true;
+  const q = state.questions[state.current];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === q.ans) b.classList.add('correct');
+  });
+  showFeedback(false, '⏰', '時間切れ！ ' + q.exp);
+  document.getElementById('next-btn').style.display = 'flex';
+}
+
+function selectAnswer(idx) {
+  if (state.answered) return;
+  state.answered = true;
+  clearInterval(state.timerInterval);
+
+  const q = state.questions[state.current];
+  const isCorrect = idx === q.ans;
+  const btns = document.querySelectorAll('.option-btn');
+
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === q.ans) b.classList.add('correct');
+    else if (i === idx && !isCorrect) b.classList.add('wrong');
+  });
+
+  // score: time bonus
+  const PENALTY = { easy: 3, medium: 5, hard: 8 };
+  const timeBonus = Math.max(0, state.timerVal);
+  const penalty = PENALTY[state.difficulty];
+
+  if (isCorrect) {
+    const totalQ = 10 + timeBonus;
+    state.correct++;
+    state.score += totalQ;
+    showFeedback(true, '✅', `正解！ +${totalQ}点（時間ボーナス: +${timeBonus}）\n${q.exp}`);
+  } else {
+    state.score = Math.max(0, state.score - penalty);
+    showFeedback(false, '❌', `不正解。 −${penalty}点ペナルティ。正解は「${q.opts[q.ans]}」\n${q.exp}`);
+  }
+
+  document.getElementById('next-btn').style.display = 'flex';
+}
+
+function showFeedback(correct, icon, text) {
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct-fb' : 'wrong-fb');
+  document.getElementById('feedback-icon').textContent = icon;
+  document.getElementById('feedback-text').textContent = text;
+}
+
+function nextQuestion() {
+  state.current++;
+  if (state.current >= state.questions.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  state.totalTime = Math.round((Date.now() - state.startTime) / 1000);
+  const pct = state.correct / state.questions.length;
+  const wrong = state.questions.length - state.correct;
+
+  let emoji, rank, sub;
+  if (pct >= 0.9) { emoji = '🏆'; rank = '完璧！天才だ！'; sub = 'パーフェクトに近い成績です'; }
+  else if (pct >= 0.7) { emoji = '🎉'; rank = 'すばらしい！'; sub = 'よく勉強していますね'; }
+  else if (pct >= 0.5) { emoji = '👏'; rank = 'なかなかです！'; sub = 'もう少しで上位です'; }
+  else if (pct >= 0.3) { emoji = '📚'; rank = 'もっと勉強しよう'; sub = '次は頑張れるはず'; }
+  else { emoji = '💪'; rank = 'チャレンジ精神！'; sub = '諦めずにまた挑戦！'; }
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('rank-msg').textContent = rank;
+  document.getElementById('rank-sub').textContent = sub;
+  document.getElementById('score-num').textContent = state.score;
+  document.getElementById('correct-count').textContent = state.correct;
+  document.getElementById('wrong-count').textContent = wrong;
+  document.getElementById('time-count').textContent = state.totalTime;
+
+  generateCoupon();
+  showScreen('result-screen');
+}
+
+function generateCoupon() {
+  const avg = state.totalTime / state.questions.length;
+  const diff = state.difficulty;
+
+  // 難易度倍率：高難度ほど少ない正解でも上位ランクに届く
+  const MULT = { easy: 1.0, medium: 1.3, hard: 1.7 };
+  const couponScore = state.correct * MULT[diff];
+
+  let tier, discount, desc, cls;
+  if (couponScore >= 16 && diff === 'hard' && avg <= 9) {
+    tier = '🌟 SSランク'; discount = '50% OFF'; desc = 'むずかしい全問正解＋神速クリア！最高クーポン獲得！'; cls = 'coupon coupon-ss';
+  } else if (couponScore >= 15) {
+    tier = '💜 Sランク';  discount = '40% OFF'; desc = `むずかしい高得点！難易度ボーナス込みで特別クーポン！`; cls = 'coupon coupon-ss';
+  } else if (couponScore >= 10) {
+    tier = '🥇 Aランク';  discount = '30% OFF'; desc = '素晴らしい成績！難易度ボーナスでお得なクーポン獲得！'; cls = 'coupon coupon-a';
+  } else if (couponScore >= 7) {
+    tier = '🥈 Bランク';  discount = '20% OFF'; desc = 'よく頑張りました！クーポン獲得！';                cls = 'coupon';
+  } else if (couponScore >= 4) {
+    tier = '🥉 Cランク';  discount = '10% OFF'; desc = 'あと少し！次はもっと良いクーポンをゲットしよう';  cls = 'coupon';
+  } else {
+    tier = '🎖 参加賞';   discount = '5% OFF';  desc = '挑戦したあなたへの特別クーポン！';                cls = 'coupon';
+  }
+
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg = () => Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  state.couponCode = `FUKU-${seg()}-${seg()}`;
+
+  const exp = new Date();
+  exp.setDate(exp.getDate() + 30);
+  const expStr = `${exp.getFullYear()}年${exp.getMonth()+1}月${exp.getDate()}日`;
+
+  document.getElementById('coupon-inner').className = cls;
+  document.getElementById('coupon-rank').textContent = tier;
+  document.getElementById('coupon-discount').textContent = discount;
+  document.getElementById('coupon-desc').textContent = desc;
+  document.getElementById('coupon-code').textContent = state.couponCode;
+  document.getElementById('coupon-expiry').textContent = `有効期限：${expStr}`;
+  document.getElementById('copy-btn').textContent = 'コピー';
+}
+
+function copyCoupon() {
+  navigator.clipboard.writeText(state.couponCode).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'コピー済✓';
+    setTimeout(() => btn.textContent = 'コピー', 2000);
+  });
+}
+
+function restart() {
+  startQuiz();
+}
+
+function showStart() {
+  clearInterval(state.timerInterval);
+  showScreen('start-screen');
+}
+
+// init selected state
+document.querySelector('[data-category="life"]').classList.add('selected');
+</script>
+</body>
+</html>
